@@ -1,0 +1,109 @@
+{% macro get_children(category, currentScopeUrl, level, megaMenuLevels, maxItems) %}
+    {% set megaMenuLevels = megaMenuLevels | default(1) %}
+    {% set maxItems = maxItems | default({"1": 30, "2": 3, "3": 2}) %}
+    {% import _self as childlist %}
+    {% set counter = 0 %}
+    {% if level < megaMenuLevels %}
+        {% for child in category.children if counter < maxItems[level] %}
+            {% if (child.details | length > 0) %}
+                {% if level == 1 %}
+                    <li><ul class="nav-dropdown-inner">
+                {% endif %}
+                    <li class="level{{ level }}">
+                        {% set newScope = currentScopeUrl ~ "/" ~ child.details[0].nameUrl %}
+                        <a @touchstart.stop href="{{ newScope }}{{ urls.trailingSlashSuffix }}">{{ child.details[0].name }}</a>
+                    </li>
+                    {% if child.children %}
+                        {{ childlist.get_children(child, newScope, level + 1, megaMenuLevels, maxItems) }}
+                    {% endif %}
+                {% if level == 1 %}
+                    </ul></li>
+                {% endif %}
+                {% set counter = counter + 1 %}
+                {% if counter == maxItems[level]%}
+                    <li class="level{{ level }} bt-more"><a @touchstart.stop href="{{ currentScopeUrl }}">{{ trans("Ceres::Template.itemShowMore") }}...</a></li>
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+{% endmacro %}
+
+{% macro get_nav_bar(categories, currentScopeUrl, megaMenuLevels, maxItemsPerStage) %}
+    {% import _self as navbar %}
+    {% set counter = 0 %}
+    {% set megaMenuLevels = megaMenuLevels | default(1) %}
+
+    {% for category in categories %}
+
+        {% if category.details | length > 0 %}
+
+            {% if urls.includeLanguage %}
+                {% set currentScopeUrl = "/" ~ category.details[0].lang ~  "/" ~ category.details[0].nameUrl %}
+            {% else %}
+                {% set currentScopeUrl = "/" ~ category.details[0].nameUrl %}
+            {% endif %}
+            {% set translatedChildren = 0 %}
+            {% for children in category.children if children.details[0] %}
+                {% set translatedChildren = translatedChildren + 1 %}
+            {% endfor %}
+
+            {% if category.children and translatedChildren > 0 %}
+
+                <li class="ddown" v-navigation-touch-handler>
+                    <a href="{{ currentScopeUrl }}{{ urls.trailingSlashSuffix }}">{{ category.details[0].name }}</a>
+
+                    <span class="d-lg-none nav-direction" data-toggle="collapse" href="#navDropdown{{ counter }}" aria-expanded="false">
+                        <i class="fa fa-caret-down" aria-hidden="true"></i>
+                    </span>
+
+                    <ul data-level="1" id="navDropdown{{ counter }}" class="collapse">
+                        {% set counter = counter + 1 %}
+                        {% if megaMenuLevels == 1 %}
+                            {% for child in category.children %}
+                                {% if child.details | length > 0 %}
+                                    <li>
+                                        <a href="{{ currentScopeUrl }}/{{ child.details[0].nameUrl }}{{ urls.trailingSlashSuffix }}">{{ child.details[0].name }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            {{ navbar.get_children(category, currentScopeUrl, 1, megaMenuLevels, maxItemsPerStage) }}
+                        {% endif %}
+                    </ul>
+                </li>
+
+            {% else %}
+
+                <li>
+                    <a href="{{ currentScopeUrl }}{{ urls.trailingSlashSuffix }}">{{ category.details[0].name }}</a>
+                </li>
+
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+
+{% endmacro %}
+
+{% macro get_sidemenu(breadcrumbs, categories, currentScopeUrl) %}
+
+    {% import _self as sidemenu %}
+    {% for category in categories if category.details[0] %}
+
+        {% set currentUrl = currentScopeUrl %}
+        {% if currentUrl is empty and urls.includeLanguage %}
+            {% set currentUrl = "/" ~ category.details[0].lang %}
+        {% endif %}
+
+        {% set currentUrl = currentUrl ~ "/" ~ category.details[0].nameUrl  %}
+        <ul>
+            <li class="nav-item{% for breadcrumb in breadcrumbs if category.id == breadcrumb.id %} active{% endfor %}">
+                <a href="{{ currentUrl }}{{ urls.trailingSlashSuffix }}" class="nav-link">{{ category.details[0].name }}</a>
+                {% if category.children is not empty %}
+                    {{ sidemenu.get_sidemenu(breadcrumbs, category.children, currentUrl) }}
+                {% endif %}
+            </li>
+        </ul>
+
+    {% endfor %}
+
+{% endmacro %}

@@ -1,0 +1,23 @@
+.widget-list,
+.widget-link-list
+{
+    .widget-inner
+    {
+        .list-container,
+        .list-centered {
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+        }
+
+        ul
+        {
+            margin-bottom: 0;
+        }
+
+        a {
+            color: $footer-color;
+        }
+    }
+}
