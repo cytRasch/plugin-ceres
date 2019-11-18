@@ -69,6 +69,11 @@ Vue.component("coupon", {
             {
                 this.waiting = true;
 
+                if(this.couponCode === "AKF10") {
+
+                    this.couponCode = "AKF010";
+                }
+
                 this.$store.dispatch("redeemCouponCode", this.couponCode).then(
                     response =>
                     {
